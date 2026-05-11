@@ -3,138 +3,73 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cheap'Meal - Commande McDo</title>
+  <title>Cheap'Meal - Commande</title>
   <style>
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f0f12;
-      color: #fff;
-    }
-    header {
-      padding: 28px 18px;
-      text-align: center;
-      background: linear-gradient(135deg, #ffcc00, #ff3b20);
-      color: #111;
-    }
+    body { margin: 0; font-family: Arial, sans-serif; background: #0f0f12; color: #fff; }
+    header { padding: 28px 18px; text-align: center; background: linear-gradient(135deg, #ffcc00, #ff3b20); color: #111; }
+    .logo { width: 115px; height: 115px; object-fit: contain; border-radius: 22px; margin-bottom: 12px; background: rgba(255,255,255,.15); }
     header h1 { margin: 0; font-size: 34px; }
     header p { margin: 8px 0 0; font-weight: 600; }
-    main {
-      max-width: 820px;
-      margin: 24px auto;
-      padding: 16px;
-    }
-    .card {
-      background: #1a1a20;
-      border: 1px solid #2c2c35;
-      border-radius: 18px;
-      padding: 20px;
-      margin-bottom: 18px;
-      box-shadow: 0 12px 35px rgba(0,0,0,.25);
-    }
-    label {
-      display: block;
-      margin: 12px 0 6px;
-      font-weight: bold;
-    }
-    input, select {
-      width: 100%;
-      padding: 13px;
-      border-radius: 12px;
-      border: 1px solid #333;
-      background: #111116;
-      color: white;
-      font-size: 16px;
-    }
-    button, .pay-button {
-      width: 100%;
-      margin-top: 14px;
-      padding: 15px;
-      border: 0;
-      border-radius: 14px;
-      background: #ffcc00;
-      color: #111;
-      font-weight: bold;
-      font-size: 16px;
-      cursor: pointer;
-      text-decoration: none;
-      display: block;
-      text-align: center;
-    }
-    button:hover, .pay-button:hover { filter: brightness(.95); }
-    .summary {
-      background: #111116;
-      border-radius: 14px;
-      padding: 15px;
-      line-height: 1.7;
-      margin-top: 14px;
-      border: 1px solid #30303a;
-    }
-    .code {
-      font-size: 22px;
-      font-weight: bold;
-      color: #ffcc00;
-      letter-spacing: 1px;
-    }
-    .hidden { display: none; }
-    .qr {
-      width: 100%;
-      max-width: 330px;
-      display: block;
-      margin: 18px auto 8px;
-      border-radius: 18px;
-      background: white;
-    }
-    .small {
-      color: #bbb;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    .warning {
-      background: #2a1d00;
-      border: 1px solid #ffcc00;
-      color: #ffe28a;
-      padding: 12px;
-      border-radius: 12px;
-      margin-top: 12px;
-    }
+    main { max-width: 900px; margin: 24px auto; padding: 16px; }
+    .card { background: #1a1a20; border: 1px solid #2c2c35; border-radius: 18px; padding: 20px; margin-bottom: 18px; box-shadow: 0 12px 35px rgba(0,0,0,.25); }
+    label { display: block; margin: 12px 0 6px; font-weight: bold; }
+    input, select { width: 100%; padding: 13px; border-radius: 12px; border: 1px solid #333; background: #111116; color: white; font-size: 16px; }
+    button, .button { width: 100%; margin-top: 14px; padding: 15px; border: 0; border-radius: 14px; background: #ffcc00; color: #111; font-weight: bold; font-size: 16px; cursor: pointer; text-decoration: none; display: block; text-align: center; }
+    .button.secondary { background: #5865F2; color: white; }
+    .button.paypal { background: #0070ba; color: white; }
+    button:hover, .button:hover { filter: brightness(.95); }
+    .summary { background: #111116; border-radius: 14px; padding: 15px; line-height: 1.7; margin-top: 14px; border: 1px solid #30303a; }
+    .code { font-size: 22px; font-weight: bold; color: #ffcc00; letter-spacing: 1px; }
+    .qr { width: 100%; max-width: 280px; display: block; margin: 18px auto 8px; border-radius: 18px; background: white; }
+    .small { color: #bbb; font-size: 14px; line-height: 1.5; }
+    .warning { background: #2a1d00; border: 1px solid #ffcc00; color: #ffe28a; padding: 12px; border-radius: 12px; margin-top: 12px; line-height: 1.5; }
+    .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+    .tab { padding: 14px; border-radius: 14px; border: 1px solid #333; background: #18181d; color: white; cursor: pointer; font-weight: bold; }
+    .tab.active { background: #ffcc00; color: #111; }
+    .disabled-box { opacity: .75; border: 1px dashed #555; padding: 16px; border-radius: 14px; background: #131318; }
   </style>
 </head>
 <body>
   <header>
+    <img src="logo.png" class="logo" alt="Logo Cheap'Meal" onerror="this.style.display='none'">
     <h1>Cheap'Meal</h1>
-    <p>Commande McDo simple et rapide</p>
+    <p>Commande rapide et simple</p>
   </header>
 
   <main>
-    <div class="card">
-      <h2>Faire une commande</h2>
+    <div class="tabs">
+      <button type="button" class="tab active" onclick="showTab('mcdo')">McDo</button>
+      <button type="button" class="tab" onclick="showTab('kfc')">KFC bientôt</button>
+    </div>
+
+    <div id="mcdoSection" class="card">
+      <h2>Commande McDo</h2>
 
       <form id="orderForm" action="https://formsubmit.co/mcdottt1@gmail.com" method="POST">
         <input type="hidden" name="_subject" value="Nouvelle commande Cheap'Meal" />
         <input type="hidden" name="_captcha" value="false" />
         <input type="hidden" name="_template" value="table" />
 
-        <label>Nom</label>
-        <input id="lastName" name="Nom" required placeholder="Ex : Dupont" />
+        <label>Nom PayPal</label>
+        <input id="lastName" name="Nom_PayPal" required placeholder="Le même nom que sur PayPal" />
 
-        <label>Prénom</label>
-        <input id="firstName" name="Prenom" required placeholder="Ex : Lucas" />
+        <label>Prénom PayPal</label>
+        <input id="firstName" name="Prenom_PayPal" required placeholder="Le même prénom que sur PayPal" />
 
         <label>Discord</label>
-        <input id="discord" name="Discord" required placeholder="Ex : pseudo#0000 ou @pseudo" />
+        <input id="discord" name="Discord" required placeholder="Ex : @pseudo" />
 
         <label>Tranche de points McDo</label>
         <select id="product" name="Produit" required>
-          <option value="75-110 pts" data-price="3.5">75-110 pts - 3,50€</option>
-          <option value="125-189 pts" data-price="5">125-189 pts - 5€</option>
-          <option value="200-275 pts" data-price="9">200-275 pts - 9€</option>
-          <option value="300-349 pts" data-price="10">300-349 pts - 10€</option>
-          <option value="350-599 pts" data-price="12">350-599 pts - 12€</option>
-          <option value="700-1199 pts" data-price="30">700-1199 pts - 30€</option>
-          <option value="1200-1599 pts" data-price="42">1200-1599 pts - 42€</option>
-          <option value="1700-2399 pts" data-price="70">1700-2399 pts - 70€</option>
+          <option value="McDo 75-110 pts" data-price="3.5">75-110 pts - 3,50€</option>
+          <option value="McDo 125-189 pts" data-price="5">125-189 pts - 5€</option>
+          <option value="McDo 200-275 pts" data-price="9">200-275 pts - 9€</option>
+          <option value="McDo 300-349 pts" data-price="10">300-349 pts - 10€</option>
+          <option value="McDo 350-599 pts" data-price="12">350-599 pts - 12€</option>
+          <option value="McDo 700-1199 pts" data-price="30">700-1199 pts - 30€</option>
+          <option value="McDo 1200-1599 pts" data-price="42">1200-1599 pts - 42€</option>
+          <option value="McDo 1700-2399 pts" data-price="70">1700-2399 pts - 70€</option>
         </select>
 
         <label>Quantité</label>
@@ -145,29 +80,52 @@
         <input type="hidden" id="instructionInput" name="Message_a_mettre_dans_PayPal" />
 
         <div class="summary">
-          <div>Produit : <span id="productText">75-110 pts</span></div>
+          <div>Produit : <span id="productText">McDo 75-110 pts</span></div>
           <div>Quantité : <span id="qtyText">1</span></div>
           <div>Total : <strong><span id="totalText">3,50€</span></strong></div>
           <div>Code commande : <span class="code" id="orderCode">CMD-00000</span></div>
         </div>
 
         <div class="warning">
-          Mets exactement le code commande dans le message PayPal pour que ta commande soit retrouvée rapidement.
+          Important : le nom et le prénom doivent être les mêmes que sur PayPal.
+          Mets aussi le code commande dans le message PayPal.
         </div>
 
         <img class="qr" src="paypal-qr.png" alt="QR Code PayPal" />
 
+        <a id="paypalLink" class="button paypal" href="#" target="_blank">Payer avec PayPal</a>
+        <a id="discordLink" class="button secondary" href="#" target="_blank">Rejoindre le Discord</a>
+
         <p class="small">
-          Après avoir envoyé la commande, paie le montant exact via le QR code PayPal.
-          Message à mettre dans PayPal : <strong id="paypalMessage">CMD-00000</strong>
+          Message à mettre dans PayPal : <strong id="paypalMessage">CMD-00000</strong><br>
+          Après paiement, garde une preuve au cas où.
         </p>
 
-        <button type="submit">Envoyer ma commande</button>
+        <button type="submit" id="submitBtn">Envoyer ma commande</button>
+        <p class="small" id="cooldownText"></p>
       </form>
+    </div>
+
+    <div id="kfcSection" class="card" style="display:none;">
+      <h2>KFC</h2>
+      <div class="disabled-box">
+        La catégorie KFC arrive bientôt. Les prix ci-dessous sont fictifs pour préparer le site.
+        <div class="summary">
+          <div>100-199 pts : 5€</div>
+          <div>200-399 pts : 10€</div>
+          <div>400-699 pts : 18€</div>
+          <div>700-999 pts : 25€</div>
+        </div>
+      </div>
     </div>
   </main>
 
   <script>
+    // À MODIFIER ICI :
+    const PAYPAL_LINK = "https://paypal.me/TONPAYPAL";
+    const DISCORD_LINK = "https://discord.gg/TONINVITATION";
+    const COOLDOWN_MINUTES = 3;
+
     const product = document.getElementById('product');
     const quantity = document.getElementById('quantity');
     const productText = document.getElementById('productText');
@@ -178,10 +136,16 @@
     const orderCodeInput = document.getElementById('orderCodeInput');
     const totalInput = document.getElementById('totalInput');
     const instructionInput = document.getElementById('instructionInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const cooldownText = document.getElementById('cooldownText');
+
+    document.getElementById('paypalLink').href = PAYPAL_LINK;
+    document.getElementById('discordLink').href = DISCORD_LINK;
 
     function generateCode() {
-      const random = Math.floor(10000 + Math.random() * 90000);
-      return "CMD-" + random;
+      const now = Date.now().toString(36).toUpperCase();
+      const random = Math.random().toString(36).substring(2, 7).toUpperCase();
+      return "CMD-" + now + "-" + random;
     }
 
     let currentCode = generateCode();
@@ -207,10 +171,46 @@
       instructionInput.value = currentCode;
     }
 
+    function checkCooldown() {
+      const lastOrder = localStorage.getItem("cheapmeal_last_order");
+      if (!lastOrder) return false;
+
+      const diff = Date.now() - parseInt(lastOrder, 10);
+      const wait = COOLDOWN_MINUTES * 60 * 1000;
+
+      if (diff < wait) {
+        const remaining = Math.ceil((wait - diff) / 1000);
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = ".5";
+        cooldownText.textContent = "Merci d'attendre encore " + remaining + " secondes avant de renvoyer une commande.";
+        return true;
+      }
+
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = "1";
+      cooldownText.textContent = "";
+      return false;
+    }
+
+    document.getElementById("orderForm").addEventListener("submit", function(e) {
+      if (checkCooldown()) {
+        e.preventDefault();
+        return;
+      }
+      localStorage.setItem("cheapmeal_last_order", Date.now().toString());
+    });
+
+    function showTab(tab) {
+      document.getElementById('mcdoSection').style.display = tab === 'mcdo' ? 'block' : 'none';
+      document.getElementById('kfcSection').style.display = tab === 'kfc' ? 'block' : 'none';
+      document.querySelectorAll('.tab').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab')[tab === 'mcdo' ? 0 : 1].classList.add('active');
+    }
+
     product.addEventListener('change', updateSummary);
     quantity.addEventListener('input', updateSummary);
-
     updateSummary();
+    setInterval(checkCooldown, 1000);
   </script>
 </body>
 </html>
