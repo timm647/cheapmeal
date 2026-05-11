@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -13,18 +12,23 @@ main{max-width:900px;margin:auto;padding:20px}
 .card{background:#1a1a20;padding:20px;border-radius:20px;border:1px solid #2e2e38}
 input,select{width:100%;padding:14px;margin-top:8px;border-radius:12px;border:1px solid #333;background:#111116;color:white}
 label{display:block;margin-top:15px;font-weight:bold}
-button,.btn{display:block;width:100%;padding:15px;border:none;border-radius:14px;margin-top:15px;font-weight:bold;text-align:center;text-decoration:none}
+button,.btn{display:block;width:100%;padding:15px;border:none;border-radius:14px;margin-top:15px;font-weight:bold;text-align:center;text-decoration:none;cursor:pointer}
 button{background:#ffcc00;color:#111}
+button:disabled{opacity:.45;cursor:not-allowed}
 .paypal{background:#0070ba;color:white}
 .discord{background:#5865F2;color:white}
 .summary{margin-top:18px;background:#111116;padding:15px;border-radius:14px;border:1px solid #333;line-height:1.8}
 .code{color:#ffcc00;font-size:24px;font-weight:bold}
 .qr{max-width:280px;width:100%;display:block;margin:20px auto;border-radius:18px;background:white}
 .small{font-size:14px;color:#bbb}
-.warning{background:#2a1d00;border:1px solid #ffcc00;padding:12px;border-radius:12px;margin-top:15px;color:#ffe28a}
+.warning{background:#2a1d00;border:1px solid #ffcc00;padding:12px;border-radius:12px;margin-top:15px;color:#ffe28a;line-height:1.5}
 .tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
 .tab{padding:14px;border-radius:14px;background:#18181d;color:white;border:1px solid #333;font-weight:bold}
-.active{background:#ffcc00;color:#111}
+.tab.active{background:#ffcc00;color:#111}
+.status{padding:8px 12px;border-radius:10px;font-size:14px;font-weight:bold;display:inline-block;margin-top:12px}
+.available{background:#163d1d;color:#7fff9c}
+.out{background:#4a1212;color:#ff9f9f}
+.expired{background:#3a3a3a;color:#ddd}
 </style>
 </head>
 <body>
@@ -38,15 +42,16 @@ button{background:#ffcc00;color:#111}
 <main>
 
 <div class="tabs">
-<div class="tab active">McDo</div>
-<div class="tab">KFC bientôt</div>
+<button type="button" class="tab active" id="mcdoTab">McDo</button>
+<button type="button" class="tab" id="kfcTab">KFC</button>
 </div>
 
 <div class="card">
-<form action="https://formsubmit.co/mcdottt1@gmail.com" method="POST">
+<form id="orderForm" action="https://formsubmit.co/mcdottt1@gmail.com" method="POST">
 
 <input type="hidden" name="_captcha" value="false">
 <input type="hidden" name="_subject" value="Nouvelle commande CheapMeal">
+<input type="hidden" name="_template" value="table">
 
 <label>Nom PayPal</label>
 <input required name="Nom">
@@ -55,25 +60,22 @@ button{background:#ffcc00;color:#111}
 <input required name="Prenom">
 
 <label>Discord</label>
-<input required name="Discord">
+<input required name="Discord" placeholder="Ex : @pseudo">
+
+<label>Catégorie</label>
+<input readonly name="Categorie" id="categoryInput" value="McDo">
 
 <label>Produit</label>
-<select id="product">
-<option data-price="3.5">McDo 75-110 pts - 3,50€</option>
-<option data-price="5">McDo 125-189 pts - 5€</option>
-<option data-price="9">McDo 200-275 pts - 9€</option>
-<option data-price="10">McDo 300-349 pts - 10€</option>
-<option data-price="12">McDo 350-599 pts - 12€</option>
-<option data-price="30">McDo 700-1199 pts - 30€</option>
-<option data-price="42">McDo 1200-1599 pts - 42€</option>
-<option data-price="70">McDo 1700-2399 pts - 70€</option>
-</select>
+<select id="product" name="Produit"></select>
+
+<div id="statusBox"></div>
 
 <label>Quantité</label>
-<input type="number" id="qty" value="1" min="1" max="20">
+<input type="number" id="qty" name="Quantite" value="1" min="1" max="20">
 
 <input type="hidden" name="Code_Commande" id="codeInput">
 <input type="hidden" name="Montant" id="amountInput">
+<input type="hidden" name="Statut_Produit" id="statusInput">
 
 <div class="summary">
 <div>Montant total : <strong id="total">3,50€</strong></div>
@@ -88,14 +90,14 @@ Mets le code commande dans le message PayPal.
 <img src="paypal-qr.png" class="qr">
 
 <a class="btn paypal" href="https://paypal.me/McdoOne" target="_blank">Payer avec PayPal</a>
-
 <a class="btn discord" href="https://discord.gg/hHFfjjC4rs" target="_blank">Rejoindre le Discord</a>
 
 <p class="small">
 Message PayPal : <strong id="paypalMsg">CM-0000</strong>
 </p>
 
-<button type="submit">Envoyer la commande</button>
+<button type="submit" id="submitBtn">Envoyer la commande</button>
+<p class="small" id="blockedText"></p>
 
 </form>
 </div>
@@ -103,6 +105,38 @@ Message PayPal : <strong id="paypalMsg">CM-0000</strong>
 </main>
 
 <script>
+// Pour modifier le stock :
+// status:"available" = Disponible
+// status:"out" = Rupture
+// status:"expired" = Expiré
+
+const products = {
+  mcdo: [
+    {name:"McDo 75-110 pts", price:3.5, status:"available"},
+    {name:"McDo 125-189 pts", price:5, status:"available"},
+    {name:"McDo 200-275 pts", price:9, status:"available"},
+    {name:"McDo 300-349 pts", price:10, status:"available"},
+    {name:"McDo 350-599 pts", price:12, status:"available"},
+    {name:"McDo 700-1199 pts", price:30, status:"available"},
+    {name:"McDo 1200-1599 pts", price:42, status:"available"},
+    {name:"McDo 1700-2399 pts", price:70, status:"available"}
+  ],
+  kfc: [
+    {name:"KFC 150 pts", price:1, status:"available"},
+    {name:"KFC 300 pts", price:1.5, status:"available"},
+    {name:"KFC 600 pts", price:2, status:"available"},
+    {name:"KFC 800 pts", price:2.75, status:"available"},
+    {name:"KFC 1000 pts", price:3, status:"available"},
+    {name:"KFC 1300 pts", price:4, status:"available"},
+    {name:"KFC 1600 pts", price:5, status:"available"},
+    {name:"KFC 1800 pts", price:5.5, status:"available"},
+    {name:"KFC 2000 pts", price:6, status:"available"},
+    {name:"KFC 2500 pts", price:7, status:"available"}
+  ]
+};
+
+let currentCategory = "mcdo";
+
 const product=document.getElementById('product');
 const qty=document.getElementById('qty');
 const total=document.getElementById('total');
@@ -110,30 +144,106 @@ const code=document.getElementById('code');
 const paypalMsg=document.getElementById('paypalMsg');
 const codeInput=document.getElementById('codeInput');
 const amountInput=document.getElementById('amountInput');
+const statusInput=document.getElementById('statusInput');
+const categoryInput=document.getElementById('categoryInput');
+const statusBox=document.getElementById('statusBox');
+const submitBtn=document.getElementById('submitBtn');
+const blockedText=document.getElementById('blockedText');
+const mcdoTab=document.getElementById('mcdoTab');
+const kfcTab=document.getElementById('kfcTab');
 
 function generateCode(){
-return "CM-"+Math.floor(1000+Math.random()*9000);
+  return "CM-" + Math.floor(1000 + Math.random() * 9000);
 }
 
-let currentCode=generateCode();
+let currentCode = generateCode();
+
+function loadProducts(){
+  product.innerHTML = "";
+  products[currentCategory].forEach(item => {
+    const option = document.createElement("option");
+    option.value = item.name;
+    option.dataset.price = item.price;
+    option.dataset.status = item.status;
+
+    let statusText = "";
+    if(item.status === "out") statusText = " - Rupture";
+    if(item.status === "expired") statusText = " - Expiré";
+
+    option.textContent = item.name + " - " + item.price.toFixed(2).replace(".", ",") + "€" + statusText;
+    product.appendChild(option);
+  });
+  categoryInput.value = currentCategory === "mcdo" ? "McDo" : "KFC";
+  update();
+}
+
+function getStatusLabel(status){
+  if(status === "available") return "Disponible";
+  if(status === "out") return "Rupture";
+  if(status === "expired") return "Expiré";
+  return "Inconnu";
+}
 
 function update(){
-const price=parseFloat(product.options[product.selectedIndex].dataset.price);
-const quantity=parseInt(qty.value||1);
-const amount=price*quantity;
+  const selected = product.options[product.selectedIndex];
+  const price = parseFloat(selected.dataset.price);
+  const status = selected.dataset.status;
+  const quantity = Math.max(1, parseInt(qty.value || 1));
+  const amount = price * quantity;
 
-total.textContent=amount.toFixed(2).replace('.',',')+"€";
-code.textContent=currentCode;
-paypalMsg.textContent=currentCode;
+  total.textContent = amount.toFixed(2).replace('.', ',') + "€";
+  code.textContent = currentCode;
+  paypalMsg.textContent = currentCode;
 
-codeInput.value=currentCode;
-amountInput.value=amount.toFixed(2)+"€";
+  codeInput.value = currentCode;
+  amountInput.value = amount.toFixed(2) + "€";
+  statusInput.value = getStatusLabel(status);
+
+  if(status === "available"){
+    statusBox.innerHTML = '<span class="status available">Disponible</span>';
+    submitBtn.disabled = false;
+    blockedText.textContent = "";
+  }
+
+  if(status === "out"){
+    statusBox.innerHTML = '<span class="status out">Rupture</span>';
+    submitBtn.disabled = true;
+    blockedText.textContent = "Ce produit est en rupture, il ne peut pas être commandé.";
+  }
+
+  if(status === "expired"){
+    statusBox.innerHTML = '<span class="status expired">Expiré</span>';
+    submitBtn.disabled = true;
+    blockedText.textContent = "Ce produit est expiré, il ne peut pas être commandé.";
+  }
 }
 
-product.addEventListener('change',update);
-qty.addEventListener('input',update);
+mcdoTab.addEventListener("click", function(){
+  currentCategory = "mcdo";
+  mcdoTab.classList.add("active");
+  kfcTab.classList.remove("active");
+  loadProducts();
+});
 
-update();
+kfcTab.addEventListener("click", function(){
+  currentCategory = "kfc";
+  kfcTab.classList.add("active");
+  mcdoTab.classList.remove("active");
+  loadProducts();
+});
+
+product.addEventListener('change', update);
+qty.addEventListener('input', update);
+
+document.getElementById("orderForm").addEventListener("submit", function(e){
+  const selected = product.options[product.selectedIndex];
+  if(selected.dataset.status !== "available"){
+    e.preventDefault();
+    alert("Ce produit n'est pas disponible.");
+  }
+});
+
+loadProducts();
 </script>
 
 </body>
