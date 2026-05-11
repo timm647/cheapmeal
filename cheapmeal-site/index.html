@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cheap'Meal - Commande McDo</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f0f12;
+      color: #fff;
+    }
+    header {
+      padding: 28px 18px;
+      text-align: center;
+      background: linear-gradient(135deg, #ffcc00, #ff3b20);
+      color: #111;
+    }
+    header h1 { margin: 0; font-size: 34px; }
+    header p { margin: 8px 0 0; font-weight: 600; }
+    main {
+      max-width: 820px;
+      margin: 24px auto;
+      padding: 16px;
+    }
+    .card {
+      background: #1a1a20;
+      border: 1px solid #2c2c35;
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 12px 35px rgba(0,0,0,.25);
+    }
+    label {
+      display: block;
+      margin: 12px 0 6px;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 13px;
+      border-radius: 12px;
+      border: 1px solid #333;
+      background: #111116;
+      color: white;
+      font-size: 16px;
+    }
+    button, .pay-button {
+      width: 100%;
+      margin-top: 14px;
+      padding: 15px;
+      border: 0;
+      border-radius: 14px;
+      background: #ffcc00;
+      color: #111;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+    }
+    button:hover, .pay-button:hover { filter: brightness(.95); }
+    .summary {
+      background: #111116;
+      border-radius: 14px;
+      padding: 15px;
+      line-height: 1.7;
+      margin-top: 14px;
+      border: 1px solid #30303a;
+    }
+    .code {
+      font-size: 22px;
+      font-weight: bold;
+      color: #ffcc00;
+      letter-spacing: 1px;
+    }
+    .hidden { display: none; }
+    .qr {
+      width: 100%;
+      max-width: 330px;
+      display: block;
+      margin: 18px auto 8px;
+      border-radius: 18px;
+      background: white;
+    }
+    .small {
+      color: #bbb;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .warning {
+      background: #2a1d00;
+      border: 1px solid #ffcc00;
+      color: #ffe28a;
+      padding: 12px;
+      border-radius: 12px;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Cheap'Meal</h1>
+    <p>Commande McDo simple et rapide</p>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Faire une commande</h2>
+
+      <form id="orderForm" action="https://formsubmit.co/mcdottt1@gmail.com" method="POST">
+        <input type="hidden" name="_subject" value="Nouvelle commande Cheap'Meal" />
+        <input type="hidden" name="_captcha" value="false" />
+        <input type="hidden" name="_template" value="table" />
+
+        <label>Nom</label>
+        <input id="lastName" name="Nom" required placeholder="Ex : Dupont" />
+
+        <label>Prénom</label>
+        <input id="firstName" name="Prenom" required placeholder="Ex : Lucas" />
+
+        <label>Discord</label>
+        <input id="discord" name="Discord" required placeholder="Ex : pseudo#0000 ou @pseudo" />
+
+        <label>Tranche de points McDo</label>
+        <select id="product" name="Produit" required>
+          <option value="75-110 pts" data-price="3.5">75-110 pts - 3,50€</option>
+          <option value="125-189 pts" data-price="5">125-189 pts - 5€</option>
+          <option value="200-275 pts" data-price="9">200-275 pts - 9€</option>
+          <option value="300-349 pts" data-price="10">300-349 pts - 10€</option>
+          <option value="350-599 pts" data-price="12">350-599 pts - 12€</option>
+          <option value="700-1199 pts" data-price="30">700-1199 pts - 30€</option>
+          <option value="1200-1599 pts" data-price="42">1200-1599 pts - 42€</option>
+          <option value="1700-2399 pts" data-price="70">1700-2399 pts - 70€</option>
+        </select>
+
+        <label>Quantité</label>
+        <input id="quantity" name="Quantite" type="number" value="1" min="1" max="20" required />
+
+        <input type="hidden" id="orderCodeInput" name="Code_commande" />
+        <input type="hidden" id="totalInput" name="Montant_total" />
+        <input type="hidden" id="instructionInput" name="Message_a_mettre_dans_PayPal" />
+
+        <div class="summary">
+          <div>Produit : <span id="productText">75-110 pts</span></div>
+          <div>Quantité : <span id="qtyText">1</span></div>
+          <div>Total : <strong><span id="totalText">3,50€</span></strong></div>
+          <div>Code commande : <span class="code" id="orderCode">CMD-00000</span></div>
+        </div>
+
+        <div class="warning">
+          Mets exactement le code commande dans le message PayPal pour que ta commande soit retrouvée rapidement.
+        </div>
+
+        <img class="qr" src="paypal-qr.png" alt="QR Code PayPal" />
+
+        <p class="small">
+          Après avoir envoyé la commande, paie le montant exact via le QR code PayPal.
+          Message à mettre dans PayPal : <strong id="paypalMessage">CMD-00000</strong>
+        </p>
+
+        <button type="submit">Envoyer ma commande</button>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    const product = document.getElementById('product');
+    const quantity = document.getElementById('quantity');
+    const productText = document.getElementById('productText');
+    const qtyText = document.getElementById('qtyText');
+    const totalText = document.getElementById('totalText');
+    const orderCode = document.getElementById('orderCode');
+    const paypalMessage = document.getElementById('paypalMessage');
+    const orderCodeInput = document.getElementById('orderCodeInput');
+    const totalInput = document.getElementById('totalInput');
+    const instructionInput = document.getElementById('instructionInput');
+
+    function generateCode() {
+      const random = Math.floor(10000 + Math.random() * 90000);
+      return "CMD-" + random;
+    }
+
+    let currentCode = generateCode();
+
+    function formatPrice(value) {
+      return value.toFixed(2).replace('.', ',') + "€";
+    }
+
+    function updateSummary() {
+      const selected = product.options[product.selectedIndex];
+      const price = parseFloat(selected.dataset.price);
+      const qty = Math.max(1, parseInt(quantity.value || "1", 10));
+      const total = price * qty;
+
+      productText.textContent = selected.value;
+      qtyText.textContent = qty;
+      totalText.textContent = formatPrice(total);
+      orderCode.textContent = currentCode;
+      paypalMessage.textContent = currentCode;
+
+      orderCodeInput.value = currentCode;
+      totalInput.value = formatPrice(total);
+      instructionInput.value = currentCode;
+    }
+
+    product.addEventListener('change', updateSummary);
+    quantity.addEventListener('input', updateSummary);
+
+    updateSummary();
+  </script>
+</body>
+</html>
