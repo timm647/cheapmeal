@@ -25,135 +25,54 @@
 <div class="card how-card"><h2 class="how-title">Comment ça marche</h2><div class="flow"><div class="flow-item"><div class="flow-number">1</div><div><div class="flow-title">Ticket Discord</div><div class="flow-text">Tu reçois le lien de commande dans ton ticket.</div></div></div><div class="flow-item"><div class="flow-number">2</div><div><div class="flow-title">Commande</div><div class="flow-text">Tu choisis McDo ou KFC sur le site.</div></div></div><div class="flow-item"><div class="flow-number">3</div><div><div class="flow-title">Paiement</div><div class="flow-text">Tu mets le code dans le message PayPal.</div></div></div><div class="flow-item"><div class="flow-number">4</div><div><div class="flow-title">Livraison</div><div class="flow-text">Tu reçois ta commande dans ton ticket.</div></div></div></div></div>
 <div class="tabs"><button type="button" class="tab active" id="mcdoTab">McDo</button><button type="button" class="tab" id="kfcTab">KFC</button></div>
 <div class="card"><form id="orderForm" method="POST">
-<input type="hidden" name="_captcha" value="false"><input type="hidden" name="_subject" id="subjectInput" value="[CHEAPMEAL] Nouvelle commande"><input type="hidden" name="_template" value="table"><input type="hidden" name="_next" value="https://timm647.github.io/cheapmeal/confirmation.html">
+<input type="hidden" name="_captcha" value="false"><input type="hidden" name="_subject" value="Nouvelle commande CheapMeal"><input type="hidden" name="_template" value="table"><input type="hidden" name="_next" value="https://timm647.github.io/cheapmeal/confirmation.html">
 <div class="grid"><div><label>Nom PayPal</label><input required name="Nom" id="lastName" placeholder="Nom sur PayPal"></div><div><label>Prénom PayPal</label><input required name="Prenom" id="firstName" placeholder="Prénom sur PayPal"></div></div>
 <label>Discord <span class="small">(optionnel)</span></label><input name="Discord" id="discordInput" placeholder="Ex : @pseudo">
 <label>Catégorie</label><input readonly name="Categorie" id="categoryInput" value="McDo">
 <label>Produit</label><select id="product" name="Produit"></select><div id="statusBox"></div>
 <label>Quantité</label><input type="number" id="qty" name="Quantite" value="1" min="1" max="20">
-<input type="hidden" name="Code_Commande" id="codeInput"><input type="hidden" name="Montant" id="amountInput"><input type="hidden" name="Statut_Produit" id="statusInput"><input type="hidden" name="Resume_Commande" id="resumeInput"><input type="hidden" name="Message_PayPal" id="paypalMessageInput"><input type="hidden" name="Total_A_Payer" id="totalPayInput">
+<input type="hidden" name="Code_Commande" id="codeInput"><input type="hidden" name="Montant" id="amountInput"><input type="hidden" name="Statut_Produit" id="statusInput">
 <div class="summary"><div class="summary-row"><span>Montant total</span><strong id="total">3,50€</strong></div><div class="code-wrap"><div class="code" id="code">CM-0000</div><button type="button" class="copy" id="copyCodeBtn">Copier code</button></div><button type="button" class="copy" id="copyAmountBtn" style="width:100%;margin-top:10px">Copier le montant</button></div>
-<div class="warning">Mets exactement le code commande dans le message PayPal. Après paiement, retourne dans ton ticket Discord avec ta preuve.</div><div class="error" id="copyError">Tu dois cliquer sur « Copier code » avant d’envoyer la commande, pour éviter les erreurs PayPal.</div><div class="success" id="successBox">Commande envoyée. Paie le montant exact, puis retourne dans ton ticket Discord avec ton code et ta preuve.</div>
+<div class="warning">Mets exactement le code commande dans le message PayPal. Après paiement, retourne dans ton ticket Discord avec ta preuve.</div><div class="error" id="copyError">Tu dois copier le code commande avant d’envoyer la commande, pour éviter les erreurs PayPal.</div><div class="success" id="successBox">Commande envoyée. Paie le montant exact, puis retourne dans ton ticket Discord avec ton code et ta preuve.</div>
 <div class="payment-box"><strong>Paiement PayPal</strong><img src="paypal-qr.png" class="qr"><p>Message PayPal : <strong id="paypalMsg">CM-0000</strong></p></div>
 <a class="btn paypal" id="paypalBtn" target="_blank">Payer avec PayPal</a><a class="btn discord" id="discordBtn" target="_blank">Retourner sur Discord</a><button type="submit" class="btn send" id="submitBtn">Envoyer la commande</button><p class="small" id="blockedText"></p></form></div>
 <div class="card faq"><h2>Questions fréquentes</h2><details><summary>Pourquoi mettre le code dans PayPal ?</summary><p>Le code permet de lier ton paiement avec ton ticket Discord et ta commande.</p></details><details><summary>Où recevoir ma commande ?</summary><p>La livraison se fait dans le ticket Discord ouvert avant la commande.</p></details><details><summary>Combien de temps pour recevoir la commande ?</summary><p>En général entre 10 et 60 minutes selon la file d’attente.</p></details><a class="btn light" href="conditions.html">Voir les conditions et règles</a></div>
 <div class="card"><h2>Avis clients</h2><div class="reviews" id="reviews"></div><p class="small">Avis temporaires, remplaçables par les vrais retours Discord.</p></div>
 </main><div class="toast" id="toast">Copié</div>
 <script>
-const cfg = CHEAPMEAL_CONFIG;
-let currentCategory="mcdo";
-let codeCopied=false;
-let linkExpired=false;
-const SPAM_DELAY_MS=120000;
-
-const product=document.getElementById("product");
-const qty=document.getElementById("qty");
-const total=document.getElementById("total");
-const code=document.getElementById("code");
-const paypalMsg=document.getElementById("paypalMsg");
-const codeInput=document.getElementById("codeInput");
-const amountInput=document.getElementById("amountInput");
-const statusInput=document.getElementById("statusInput");
-const categoryInput=document.getElementById("categoryInput");
-const statusBox=document.getElementById("statusBox");
-const submitBtn=document.getElementById("submitBtn");
-const blockedText=document.getElementById("blockedText");
-const mcdoTab=document.getElementById("mcdoTab");
-const kfcTab=document.getElementById("kfcTab");
-const copyCodeBtn=document.getElementById("copyCodeBtn");
-const copyAmountBtn=document.getElementById("copyAmountBtn");
-const toast=document.getElementById("toast");
-const successBox=document.getElementById("successBox");
-const copyError=document.getElementById("copyError");
-const discordInput=document.getElementById("discordInput");
-const subjectInput=document.getElementById("subjectInput");
-const resumeInput=document.getElementById("resumeInput");
-const paypalMessageInput=document.getElementById("paypalMessageInput");
-const totalPayInput=document.getElementById("totalPayInput");
-
-document.getElementById("orderForm").action="https://formsubmit.co/"+cfg.orderEmail;
-document.getElementById("paypalBtn").href=cfg.paypalLink;
-document.getElementById("discordBtn").href=cfg.discordLink;
-document.getElementById("deliveredCount").textContent="+"+cfg.deliveredCount;
-
-if(cfg.maintenanceMode){
-  document.getElementById("maintenanceBox").style.display="block";
-  document.getElementById("maintenanceText").textContent=cfg.maintenanceMessage;
-}
-
-function generateCode(){
-  return "CM-"+Math.floor(1000+Math.random()*9000);
-}
-
+const cfg = CHEAPMEAL_CONFIG; let currentCategory="mcdo"; let codeCopied=false; let linkExpired=false; const SPAM_DELAY_MS=120000;
+const product=document.getElementById("product"),qty=document.getElementById("qty"),total=document.getElementById("total"),code=document.getElementById("code"),paypalMsg=document.getElementById("paypalMsg"),codeInput=document.getElementById("codeInput"),amountInput=document.getElementById("amountInput"),statusInput=document.getElementById("statusInput"),categoryInput=document.getElementById("categoryInput"),statusBox=document.getElementById("statusBox"),submitBtn=document.getElementById("submitBtn"),blockedText=document.getElementById("blockedText"),mcdoTab=document.getElementById("mcdoTab"),kfcTab=document.getElementById("kfcTab"),copyCodeBtn=document.getElementById("copyCodeBtn"),copyAmountBtn=document.getElementById("copyAmountBtn"),toast=document.getElementById("toast"),successBox=document.getElementById("successBox"),copyError=document.getElementById("copyError");
+document.getElementById("orderForm").action="https://formsubmit.co/"+cfg.orderEmail; document.getElementById("paypalBtn").href=cfg.paypalLink; document.getElementById("discordBtn").href=cfg.discordLink; document.getElementById("deliveredCount").textContent="+"+cfg.deliveredCount;
+if(cfg.maintenanceMode){document.getElementById("maintenanceBox").style.display="block";document.getElementById("maintenanceText").textContent=cfg.maintenanceMessage;}
+function generateCode(){return"CM-"+Math.floor(1000+Math.random()*9000)}
 const params=new URLSearchParams(window.location.search);
 let currentCode=params.get("code")||generateCode();
-
-if(params.get("user")){
-  discordInput.value=params.get("user");
-}
-
+if(params.get("user"))document.getElementById("discordInput").value=params.get("user");
 if(params.get("expires") && Date.now() > parseInt(params.get("expires"),10)){
   linkExpired=true;
-  const expiredBox=document.getElementById("expiredLinkBox");
-  if(expiredBox) expiredBox.style.display="block";
+  document.getElementById("expiredLinkBox").style.display="block";
 }
-
-async function copyText(text,message){
-  try{
-    if(navigator.clipboard && window.isSecureContext){
-      await navigator.clipboard.writeText(text);
-    }else{
-      const textarea=document.createElement("textarea");
-      textarea.value=text;
-      textarea.style.position="fixed";
-      textarea.style.left="-9999px";
-      textarea.style.top="0";
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
-    }
-    toast.textContent=message;
-    toast.style.display="block";
-    setTimeout(()=>toast.style.display="none",1500);
-    return true;
-  }catch(e){
-    alert("Copie impossible automatiquement. Copie manuellement : "+text);
-    return false;
-  }
-}
-
+function copyText(t,m){if(navigator.clipboard){navigator.clipboard.writeText(t)}toast.textContent=m;toast.style.display="block";setTimeout(()=>toast.style.display="none",1500)}
+function renderReviews(){document.getElementById("reviews").innerHTML=cfg.reviews.map(r=>`<div class="review"><div class="review-top"><div class="avatar">${r.avatar}</div><div><strong>${r.name}</strong><div class="stars">${"★".repeat(r.stars)}</div></div></div><p>${r.text}</p></div>`).join("")}
 function normalizeText(value){
   return String(value || "").toLowerCase().replace(/\s+/g," ").trim();
-}
-
-function getPaypalMessage(){
-  const discordValue=discordInput.value.trim();
-  return discordValue ? currentCode+" - "+discordValue : currentCode;
-}
-
-function renderReviews(){
-  document.getElementById("reviews").innerHTML=cfg.reviews.map(r=>
-    `<div class="review"><div class="review-top"><div class="avatar">${r.avatar}</div><div><strong>${r.name}</strong><div class="stars">${"★".repeat(r.stars)}</div></div></div><p>${r.text}</p></div>`
-  ).join("");
 }
 
 function loadProducts(){
   product.innerHTML="";
   cfg.products[currentCategory].forEach(item=>{
-    const option=document.createElement("option");
-    option.value=item.name;
-    option.dataset.price=item.price;
-    option.dataset.status=item.status;
-    let statusText="";
-    if(item.status==="out") statusText=" - Rupture";
-    if(item.status==="expired") statusText=" - Expiré";
-    option.textContent=item.name+" - "+Number(item.price).toFixed(2).replace(".",",")+"€"+statusText;
-    product.appendChild(option);
+    const o=document.createElement("option");
+    o.value=item.name;
+    o.dataset.price=item.price;
+    o.dataset.status=item.status;
+    let s="";
+    if(item.status==="out")s=" - Rupture";
+    if(item.status==="expired")s=" - Expiré";
+    o.textContent=item.name+" - "+Number(item.price).toFixed(2).replace(".",",")+"€"+s;
+    product.appendChild(o)
   });
   categoryInput.value=currentCategory==="mcdo"?"McDo":"KFC";
-  update();
+  update()
 }
 
 function applyUrlPrefill(){
@@ -173,7 +92,7 @@ function applyUrlPrefill(){
   const qtyParam=params.get("qty");
   if(qtyParam){
     const parsedQty=parseInt(qtyParam,10);
-    if(!isNaN(parsedQty) && parsedQty>=1 && parsedQty<=20){
+    if(!isNaN(parsedQty) && parsedQty >= 1 && parsedQty <= 20){
       qty.value=String(parsedQty);
     }
   }
@@ -192,147 +111,20 @@ function applyUrlPrefill(){
 
   update();
 }
-
-function labelStatus(status){
-  if(status==="available") return "Disponible";
-  if(status==="out") return "Rupture";
-  if(status==="expired") return "Expiré";
-  return "Inconnu";
-}
-
-function update(){
-  const selected=product.options[product.selectedIndex];
-  if(!selected) return;
-
-  const price=parseFloat(selected.dataset.price);
-  const status=selected.dataset.status;
-  const quantity=Math.max(1,parseInt(qty.value||1));
-  const amount=price*quantity;
-  const amountText=amount.toFixed(2).replace(".",",")+"€";
-  const payMessage=getPaypalMessage();
-  const discordValue=discordInput.value.trim();
-
-  total.textContent=amountText;
-  code.textContent=currentCode;
-  paypalMsg.textContent=payMessage;
-
-  codeInput.value=currentCode;
-  amountInput.value=amount.toFixed(2)+"€";
-  statusInput.value=labelStatus(status);
-
-  if(subjectInput){
-    subjectInput.value="[CHEAPMEAL] "+currentCode+" | "+amount.toFixed(2)+"€"+(discordValue ? " | "+discordValue : "");
-  }
-  if(resumeInput){
-    resumeInput.value="COMMANDE "+currentCode+" | MONTANT "+amount.toFixed(2)+"€"+(discordValue ? " | DISCORD "+discordValue : "");
-  }
-  if(paypalMessageInput){
-    paypalMessageInput.value=payMessage;
-  }
-  if(totalPayInput){
-    totalPayInput.value=amount.toFixed(2)+"€";
-  }
-
-  if(linkExpired){
-    statusBox.innerHTML='<span class="status out">Lien expiré</span>';
-    submitBtn.disabled=true;
-    blockedText.textContent="Ce lien a expiré. Demande un nouveau lien sur Discord.";
-    return;
-  }
-
-  if(cfg.maintenanceMode){
-    statusBox.innerHTML='<span class="status out">Maintenance</span>';
-    submitBtn.disabled=true;
-    blockedText.textContent="Les commandes sont temporairement désactivées.";
-    return;
-  }
-
-  if(status==="available"){
-    statusBox.innerHTML='<span class="status available">Disponible</span>';
-    submitBtn.disabled=false;
-    blockedText.textContent="";
-  }else{
-    statusBox.innerHTML='<span class="status '+(status==="out"?"out":"expired")+'">'+labelStatus(status)+'</span>';
-    submitBtn.disabled=true;
-    blockedText.textContent="Ce produit ne peut pas être commandé.";
-  }
-}
-
-copyCodeBtn.onclick=async()=>{
-  const ok=await copyText(getPaypalMessage(),"Message PayPal copié");
-  if(ok){
-    codeCopied=true;
-    copyError.style.display="none";
-  }
-};
-
-copyAmountBtn.onclick=()=>copyText(total.textContent,"Montant copié");
-
-mcdoTab.onclick=()=>{
-  currentCategory="mcdo";
-  mcdoTab.classList.add("active");
-  kfcTab.classList.remove("active");
-  codeCopied=false;
-  loadProducts();
-};
-
-kfcTab.onclick=()=>{
-  currentCategory="kfc";
-  kfcTab.classList.add("active");
-  mcdoTab.classList.remove("active");
-  codeCopied=false;
-  loadProducts();
-};
-
-product.onchange=()=>{
-  codeCopied=false;
-  update();
-};
-
-qty.oninput=()=>{
-  codeCopied=false;
-  update();
-};
-
-discordInput.addEventListener("input",()=>{
-  codeCopied=false;
-  update();
-});
-
-document.getElementById("orderForm").onsubmit=(event)=>{
-  const selected=product.options[product.selectedIndex];
-
-  if(linkExpired){
-    event.preventDefault();
-    alert("Ce lien de commande a expiré.");
-    return;
-  }
-
-  if(!selected || selected.dataset.status!=="available" || cfg.maintenanceMode){
-    event.preventDefault();
-    alert("Ce produit n'est pas disponible.");
-    return;
-  }
-
+function labelStatus(s){return s==="available"?"Disponible":s==="out"?"Rupture":s==="expired"?"Expiré":"Inconnu"}
+function update(){const sel=product.options[product.selectedIndex],price=parseFloat(sel.dataset.price),status=sel.dataset.status,quantity=Math.max(1,parseInt(qty.value||1)),amount=price*quantity,amountText=amount.toFixed(2).replace(".",",")+"€";total.textContent=amountText;code.textContent=currentCode;paypalMsg.textContent=currentCode;codeInput.value=currentCode;amountInput.value=amount.toFixed(2)+"€";statusInput.value=labelStatus(status);if(cfg.maintenanceMode){statusBox.innerHTML='<span class="status out">Maintenance</span>';submitBtn.disabled=true;blockedText.textContent="Les commandes sont temporairement désactivées.";return}if(status==="available"){statusBox.innerHTML='<span class="status available">Disponible</span>';submitBtn.disabled=false;blockedText.textContent=""}else{statusBox.innerHTML='<span class="status '+(status==="out"?"out":"expired")+'">'+labelStatus(status)+'</span>';submitBtn.disabled=true;blockedText.textContent="Ce produit ne peut pas être commandé."}}
+copyCodeBtn.onclick=()=>{codeCopied=true;copyError.style.display="none";copyText(getPaypalMessage(),"Message PayPal copié")}; copyAmountBtn.onclick=()=>copyText(total.textContent,"Montant copié"); document.getElementById("discordInput").addEventListener("input",()=>{codeCopied=false;update()});
+mcdoTab.onclick=()=>{currentCategory="mcdo";mcdoTab.classList.add("active");kfcTab.classList.remove("active");loadProducts()}; kfcTab.onclick=()=>{currentCategory="kfc";kfcTab.classList.add("active");mcdoTab.classList.remove("active");loadProducts()};
+product.onchange=()=>{codeCopied=false;update()}; qty.oninput=()=>{codeCopied=false;update()};
+document.getElementById("orderForm").onsubmit=(e)=>{
+  const sel=product.options[product.selectedIndex];
+  if(linkExpired){e.preventDefault();alert("Ce lien de commande a expiré.");return}
+  if(sel.dataset.status!=="available"||cfg.maintenanceMode){e.preventDefault();alert("Ce produit n'est pas disponible.");return}
   const last=parseInt(localStorage.getItem("cheapmeal_last_order")||"0",10);
-  if(Date.now()-last<SPAM_DELAY_MS){
-    event.preventDefault();
-    alert("Merci d'attendre un peu avant de renvoyer une commande.");
-    return;
-  }
-
-  if(!codeCopied){
-    event.preventDefault();
-    copyError.style.display="block";
-    copyError.scrollIntoView({behavior:"smooth",block:"center"});
-    return;
-  }
-
+  if(Date.now()-last<SPAM_DELAY_MS){e.preventDefault();alert("Merci d'attendre un peu avant de renvoyer une commande.");return}
+  if(!codeCopied){e.preventDefault();copyError.style.display="block";copyError.scrollIntoView({behavior:"smooth",block:"center"});return}
   localStorage.setItem("cheapmeal_last_order",String(Date.now()));
-  successBox.style.display="block";
+  successBox.style.display="block"
 };
-
-renderReviews();
-loadProducts();
-applyUrlPrefill();
+renderReviews();loadProducts();applyUrlPrefill();
 </script></body></html>
