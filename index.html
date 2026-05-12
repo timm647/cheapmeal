@@ -31,11 +31,7 @@
 <label>Catégorie</label><input readonly name="Categorie" id="categoryInput" value="McDo">
 <label>Produit</label><select id="product" name="Produit"></select><div id="statusBox"></div>
 <label>Quantité</label><input type="number" id="qty" name="Quantite" value="1" min="1" max="20">
-<input type="hidden" name="Code_Commande" id="codeInput"><input type="hidden" name="Montant" id="amountInput"><input type="hidden" name="Statut_Produit" id="statusInput">
-<input type="hidden" name="Resume_Commande" id="resumeInput">
-<input type="hidden" name="Message_PayPal" id="paypalMessageInput">
-<input type="hidden" name="Total_A_Payer" id="totalPayInput">
-
+<input type="hidden" name="Code_Commande" id="codeInput"><input type="hidden" name="Montant" id="amountInput"><input type="hidden" name="Statut_Produit" id="statusInput"><input type="hidden" name="Resume_Commande" id="resumeInput"><input type="hidden" name="Message_PayPal" id="paypalMessageInput"><input type="hidden" name="Total_A_Payer" id="totalPayInput">
 <div class="summary"><div class="summary-row"><span>Montant total</span><strong id="total">3,50€</strong></div><div class="code-wrap"><div class="code" id="code">CM-0000</div><button type="button" class="copy" id="copyCodeBtn">Copier code</button></div><button type="button" class="copy" id="copyAmountBtn" style="width:100%;margin-top:10px">Copier le montant</button></div>
 <div class="warning">Mets exactement le code commande dans le message PayPal. Après paiement, retourne dans ton ticket Discord avec ta preuve.</div><div class="error" id="copyError">Tu dois cliquer sur « Copier code » avant d’envoyer la commande, pour éviter les erreurs PayPal.</div><div class="success" id="successBox">Commande envoyée. Paie le montant exact, puis retourne dans ton ticket Discord avec ton code et ta preuve.</div>
 <div class="payment-box"><strong>Paiement PayPal</strong><img src="paypal-qr.png" class="qr"><p>Message PayPal : <strong id="paypalMsg">CM-0000</strong></p></div>
@@ -44,62 +40,120 @@
 <div class="card"><h2>Avis clients</h2><div class="reviews" id="reviews"></div><p class="small">Avis temporaires, remplaçables par les vrais retours Discord.</p></div>
 </main><div class="toast" id="toast">Copié</div>
 <script>
-const cfg = CHEAPMEAL_CONFIG; let currentCategory="mcdo"; let codeCopied=false; let linkExpired=false; const SPAM_DELAY_MS=120000;
-const product=document.getElementById("product"),qty=document.getElementById("qty"),total=document.getElementById("total"),code=document.getElementById("code"),paypalMsg=document.getElementById("paypalMsg"),codeInput=document.getElementById("codeInput"),amountInput=document.getElementById("amountInput"),statusInput=document.getElementById("statusInput"),categoryInput=document.getElementById("categoryInput"),statusBox=document.getElementById("statusBox"),submitBtn=document.getElementById("submitBtn"),blockedText=document.getElementById("blockedText"),mcdoTab=document.getElementById("mcdoTab"),kfcTab=document.getElementById("kfcTab"),copyCodeBtn=document.getElementById("copyCodeBtn"),copyAmountBtn=document.getElementById("copyAmountBtn"),toast=document.getElementById("toast"),successBox=document.getElementById("successBox"),copyError=document.getElementById("copyError"),subjectInput=document.getElementById("subjectInput"),resumeInput=document.getElementById("resumeInput"),paypalMessageInput=document.getElementById("paypalMessageInput"),totalPayInput=document.getElementById("totalPayInput"),discordInput=document.getElementById("discordInput");
-document.getElementById("orderForm").action="https://formsubmit.co/"+cfg.orderEmail; document.getElementById("paypalBtn").href=cfg.paypalLink; document.getElementById("discordBtn").href=cfg.discordLink; document.getElementById("deliveredCount").textContent="+"+cfg.deliveredCount;
-if(cfg.maintenanceMode){document.getElementById("maintenanceBox").style.display="block";document.getElementById("maintenanceText").textContent=cfg.maintenanceMessage;}
-function generateCode(){return"CM-"+Math.floor(1000+Math.random()*9000)}
+const cfg = CHEAPMEAL_CONFIG;
+let currentCategory="mcdo";
+let codeCopied=false;
+let linkExpired=false;
+const SPAM_DELAY_MS=120000;
+
+const product=document.getElementById("product");
+const qty=document.getElementById("qty");
+const total=document.getElementById("total");
+const code=document.getElementById("code");
+const paypalMsg=document.getElementById("paypalMsg");
+const codeInput=document.getElementById("codeInput");
+const amountInput=document.getElementById("amountInput");
+const statusInput=document.getElementById("statusInput");
+const categoryInput=document.getElementById("categoryInput");
+const statusBox=document.getElementById("statusBox");
+const submitBtn=document.getElementById("submitBtn");
+const blockedText=document.getElementById("blockedText");
+const mcdoTab=document.getElementById("mcdoTab");
+const kfcTab=document.getElementById("kfcTab");
+const copyCodeBtn=document.getElementById("copyCodeBtn");
+const copyAmountBtn=document.getElementById("copyAmountBtn");
+const toast=document.getElementById("toast");
+const successBox=document.getElementById("successBox");
+const copyError=document.getElementById("copyError");
+const discordInput=document.getElementById("discordInput");
+const subjectInput=document.getElementById("subjectInput");
+const resumeInput=document.getElementById("resumeInput");
+const paypalMessageInput=document.getElementById("paypalMessageInput");
+const totalPayInput=document.getElementById("totalPayInput");
+
+document.getElementById("orderForm").action="https://formsubmit.co/"+cfg.orderEmail;
+document.getElementById("paypalBtn").href=cfg.paypalLink;
+document.getElementById("discordBtn").href=cfg.discordLink;
+document.getElementById("deliveredCount").textContent="+"+cfg.deliveredCount;
+
+if(cfg.maintenanceMode){
+  document.getElementById("maintenanceBox").style.display="block";
+  document.getElementById("maintenanceText").textContent=cfg.maintenanceMessage;
+}
+
+function generateCode(){
+  return "CM-"+Math.floor(1000+Math.random()*9000);
+}
+
 const params=new URLSearchParams(window.location.search);
 let currentCode=params.get("code")||generateCode();
-if(params.get("user"))document.getElementById("discordInput").value=params.get("user");
+
+if(params.get("user")){
+  discordInput.value=params.get("user");
+}
+
 if(params.get("expires") && Date.now() > parseInt(params.get("expires"),10)){
   linkExpired=true;
-  document.getElementById("expiredLinkBox").style.display="block";
+  const expiredBox=document.getElementById("expiredLinkBox");
+  if(expiredBox) expiredBox.style.display="block";
 }
-async function copyText(t,m){
+
+async function copyText(text,message){
   try{
     if(navigator.clipboard && window.isSecureContext){
-      await navigator.clipboard.writeText(t);
+      await navigator.clipboard.writeText(text);
     }else{
-      const temp=document.createElement("textarea");
-      temp.value=t;
-      temp.style.position="fixed";
-      temp.style.opacity="0";
-      document.body.appendChild(temp);
-      temp.focus();
-      temp.select();
+      const textarea=document.createElement("textarea");
+      textarea.value=text;
+      textarea.style.position="fixed";
+      textarea.style.left="-9999px";
+      textarea.style.top="0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
       document.execCommand("copy");
-      document.body.removeChild(temp);
+      document.body.removeChild(textarea);
     }
-    toast.textContent=m;
+    toast.textContent=message;
     toast.style.display="block";
     setTimeout(()=>toast.style.display="none",1500);
     return true;
-  }catch(err){
-    alert("Copie impossible automatiquement. Copie manuellement : "+t);
+  }catch(e){
+    alert("Copie impossible automatiquement. Copie manuellement : "+text);
     return false;
   }
-}toast.textContent=m;toast.style.display="block";setTimeout(()=>toast.style.display="none",1500)}
-function renderReviews(){document.getElementById("reviews").innerHTML=cfg.reviews.map(r=>`<div class="review"><div class="review-top"><div class="avatar">${r.avatar}</div><div><strong>${r.name}</strong><div class="stars">${"★".repeat(r.stars)}</div></div></div><p>${r.text}</p></div>`).join("")}
+}
+
 function normalizeText(value){
   return String(value || "").toLowerCase().replace(/\s+/g," ").trim();
+}
+
+function getPaypalMessage(){
+  const discordValue=discordInput.value.trim();
+  return discordValue ? currentCode+" - "+discordValue : currentCode;
+}
+
+function renderReviews(){
+  document.getElementById("reviews").innerHTML=cfg.reviews.map(r=>
+    `<div class="review"><div class="review-top"><div class="avatar">${r.avatar}</div><div><strong>${r.name}</strong><div class="stars">${"★".repeat(r.stars)}</div></div></div><p>${r.text}</p></div>`
+  ).join("");
 }
 
 function loadProducts(){
   product.innerHTML="";
   cfg.products[currentCategory].forEach(item=>{
-    const o=document.createElement("option");
-    o.value=item.name;
-    o.dataset.price=item.price;
-    o.dataset.status=item.status;
-    let s="";
-    if(item.status==="out")s=" - Rupture";
-    if(item.status==="expired")s=" - Expiré";
-    o.textContent=item.name+" - "+Number(item.price).toFixed(2).replace(".",",")+"€"+s;
-    product.appendChild(o)
+    const option=document.createElement("option");
+    option.value=item.name;
+    option.dataset.price=item.price;
+    option.dataset.status=item.status;
+    let statusText="";
+    if(item.status==="out") statusText=" - Rupture";
+    if(item.status==="expired") statusText=" - Expiré";
+    option.textContent=item.name+" - "+Number(item.price).toFixed(2).replace(".",",")+"€"+statusText;
+    product.appendChild(option);
   });
   categoryInput.value=currentCategory==="mcdo"?"McDo":"KFC";
-  update()
+  update();
 }
 
 function applyUrlPrefill(){
@@ -119,7 +173,7 @@ function applyUrlPrefill(){
   const qtyParam=params.get("qty");
   if(qtyParam){
     const parsedQty=parseInt(qtyParam,10);
-    if(!isNaN(parsedQty) && parsedQty >= 1 && parsedQty <= 20){
+    if(!isNaN(parsedQty) && parsedQty>=1 && parsedQty<=20){
       qty.value=String(parsedQty);
     }
   }
@@ -138,22 +192,25 @@ function applyUrlPrefill(){
 
   update();
 }
-function getPaypalMessage(){
-  const discordValue = discordInput ? discordInput.value.trim() : "";
-  return discordValue ? currentCode + " - " + discordValue : currentCode;
-}
-function labelStatus(s){return s==="available"?"Disponible":s==="out"?"Rupture":s==="expired"?"Expiré":"Inconnu"}
-function update(){
-  const sel=product.options[product.selectedIndex];
-  if(!sel) return;
 
-  const price=parseFloat(sel.dataset.price);
-  const status=sel.dataset.status;
+function labelStatus(status){
+  if(status==="available") return "Disponible";
+  if(status==="out") return "Rupture";
+  if(status==="expired") return "Expiré";
+  return "Inconnu";
+}
+
+function update(){
+  const selected=product.options[product.selectedIndex];
+  if(!selected) return;
+
+  const price=parseFloat(selected.dataset.price);
+  const status=selected.dataset.status;
   const quantity=Math.max(1,parseInt(qty.value||1));
   const amount=price*quantity;
   const amountText=amount.toFixed(2).replace(".",",")+"€";
   const payMessage=getPaypalMessage();
-  const discordValue=discordInput ? discordInput.value.trim() : "";
+  const discordValue=discordInput.value.trim();
 
   total.textContent=amountText;
   code.textContent=currentCode;
@@ -169,8 +226,19 @@ function update(){
   if(resumeInput){
     resumeInput.value="COMMANDE "+currentCode+" | MONTANT "+amount.toFixed(2)+"€"+(discordValue ? " | DISCORD "+discordValue : "");
   }
-  if(paypalMessageInput){paypalMessageInput.value=payMessage;}
-  if(totalPayInput){totalPayInput.value=amount.toFixed(2)+"€";}
+  if(paypalMessageInput){
+    paypalMessageInput.value=payMessage;
+  }
+  if(totalPayInput){
+    totalPayInput.value=amount.toFixed(2)+"€";
+  }
+
+  if(linkExpired){
+    statusBox.innerHTML='<span class="status out">Lien expiré</span>';
+    submitBtn.disabled=true;
+    blockedText.textContent="Ce lien a expiré. Demande un nouveau lien sur Discord.";
+    return;
+  }
 
   if(cfg.maintenanceMode){
     statusBox.innerHTML='<span class="status out">Maintenance</span>';
@@ -189,6 +257,7 @@ function update(){
     blockedText.textContent="Ce produit ne peut pas être commandé.";
   }
 }
+
 copyCodeBtn.onclick=async()=>{
   const ok=await copyText(getPaypalMessage(),"Message PayPal copié");
   if(ok){
@@ -196,19 +265,74 @@ copyCodeBtn.onclick=async()=>{
     copyError.style.display="none";
   }
 };
+
 copyAmountBtn.onclick=()=>copyText(total.textContent,"Montant copié");
-document.getElementById("discordInput").addEventListener("input",()=>{codeCopied=false;update()});
-mcdoTab.onclick=()=>{currentCategory="mcdo";mcdoTab.classList.add("active");kfcTab.classList.remove("active");loadProducts()}; kfcTab.onclick=()=>{currentCategory="kfc";kfcTab.classList.add("active");mcdoTab.classList.remove("active");loadProducts()};
-product.onchange=()=>{codeCopied=false;update()}; qty.oninput=()=>{codeCopied=false;update()};
-document.getElementById("orderForm").onsubmit=(e)=>{
-  const sel=product.options[product.selectedIndex];
-  if(linkExpired){e.preventDefault();alert("Ce lien de commande a expiré.");return}
-  if(sel.dataset.status!=="available"||cfg.maintenanceMode){e.preventDefault();alert("Ce produit n'est pas disponible.");return}
-  const last=parseInt(localStorage.getItem("cheapmeal_last_order")||"0",10);
-  if(Date.now()-last<SPAM_DELAY_MS){e.preventDefault();alert("Merci d'attendre un peu avant de renvoyer une commande.");return}
-  if(!codeCopied){e.preventDefault();copyError.style.display="block";copyError.scrollIntoView({behavior:"smooth",block:"center"});return}
-  localStorage.setItem("cheapmeal_last_order",String(Date.now()));
-  successBox.style.display="block"
+
+mcdoTab.onclick=()=>{
+  currentCategory="mcdo";
+  mcdoTab.classList.add("active");
+  kfcTab.classList.remove("active");
+  codeCopied=false;
+  loadProducts();
 };
-renderReviews();loadProducts();applyUrlPrefill();
+
+kfcTab.onclick=()=>{
+  currentCategory="kfc";
+  kfcTab.classList.add("active");
+  mcdoTab.classList.remove("active");
+  codeCopied=false;
+  loadProducts();
+};
+
+product.onchange=()=>{
+  codeCopied=false;
+  update();
+};
+
+qty.oninput=()=>{
+  codeCopied=false;
+  update();
+};
+
+discordInput.addEventListener("input",()=>{
+  codeCopied=false;
+  update();
+});
+
+document.getElementById("orderForm").onsubmit=(event)=>{
+  const selected=product.options[product.selectedIndex];
+
+  if(linkExpired){
+    event.preventDefault();
+    alert("Ce lien de commande a expiré.");
+    return;
+  }
+
+  if(!selected || selected.dataset.status!=="available" || cfg.maintenanceMode){
+    event.preventDefault();
+    alert("Ce produit n'est pas disponible.");
+    return;
+  }
+
+  const last=parseInt(localStorage.getItem("cheapmeal_last_order")||"0",10);
+  if(Date.now()-last<SPAM_DELAY_MS){
+    event.preventDefault();
+    alert("Merci d'attendre un peu avant de renvoyer une commande.");
+    return;
+  }
+
+  if(!codeCopied){
+    event.preventDefault();
+    copyError.style.display="block";
+    copyError.scrollIntoView({behavior:"smooth",block:"center"});
+    return;
+  }
+
+  localStorage.setItem("cheapmeal_last_order",String(Date.now()));
+  successBox.style.display="block";
+};
+
+renderReviews();
+loadProducts();
+applyUrlPrefill();
 </script></body></html>
