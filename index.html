@@ -54,7 +54,63 @@ if(params.get("expires") && Date.now() > parseInt(params.get("expires"),10)){
 }
 function copyText(t,m){if(navigator.clipboard){navigator.clipboard.writeText(t)}toast.textContent=m;toast.style.display="block";setTimeout(()=>toast.style.display="none",1500)}
 function renderReviews(){document.getElementById("reviews").innerHTML=cfg.reviews.map(r=>`<div class="review"><div class="review-top"><div class="avatar">${r.avatar}</div><div><strong>${r.name}</strong><div class="stars">${"★".repeat(r.stars)}</div></div></div><p>${r.text}</p></div>`).join("")}
-function loadProducts(){product.innerHTML="";cfg.products[currentCategory].forEach(item=>{const o=document.createElement("option");o.value=item.name;o.dataset.price=item.price;o.dataset.status=item.status;let s="";if(item.status==="out")s=" - Rupture";if(item.status==="expired")s=" - Expiré";o.textContent=item.name+" - "+Number(item.price).toFixed(2).replace(".",",")+"€"+s;product.appendChild(o)});categoryInput.value=currentCategory==="mcdo"?"McDo":"KFC";update()}
+function normalizeText(value){
+  return String(value || "").toLowerCase().replace(/\s+/g," ").trim();
+}
+
+function loadProducts(){
+  product.innerHTML="";
+  cfg.products[currentCategory].forEach(item=>{
+    const o=document.createElement("option");
+    o.value=item.name;
+    o.dataset.price=item.price;
+    o.dataset.status=item.status;
+    let s="";
+    if(item.status==="out")s=" - Rupture";
+    if(item.status==="expired")s=" - Expiré";
+    o.textContent=item.name+" - "+Number(item.price).toFixed(2).replace(".",",")+"€"+s;
+    product.appendChild(o)
+  });
+  categoryInput.value=currentCategory==="mcdo"?"McDo":"KFC";
+  update()
+}
+
+function applyUrlPrefill(){
+  const cat=params.get("cat");
+  if(cat && ["mcdo","kfc"].includes(cat.toLowerCase())){
+    currentCategory=cat.toLowerCase();
+    if(currentCategory==="mcdo"){
+      mcdoTab.classList.add("active");
+      kfcTab.classList.remove("active");
+    }else{
+      kfcTab.classList.add("active");
+      mcdoTab.classList.remove("active");
+    }
+    loadProducts();
+  }
+
+  const qtyParam=params.get("qty");
+  if(qtyParam){
+    const parsedQty=parseInt(qtyParam,10);
+    if(!isNaN(parsedQty) && parsedQty >= 1 && parsedQty <= 20){
+      qty.value=String(parsedQty);
+    }
+  }
+
+  const productParam=params.get("product");
+  if(productParam){
+    const target=normalizeText(productParam);
+    for(let i=0;i<product.options.length;i++){
+      const optionName=normalizeText(product.options[i].value);
+      if(optionName===target || optionName.includes(target)){
+        product.selectedIndex=i;
+        break;
+      }
+    }
+  }
+
+  update();
+}
 function labelStatus(s){return s==="available"?"Disponible":s==="out"?"Rupture":s==="expired"?"Expiré":"Inconnu"}
 function update(){const sel=product.options[product.selectedIndex],price=parseFloat(sel.dataset.price),status=sel.dataset.status,quantity=Math.max(1,parseInt(qty.value||1)),amount=price*quantity,amountText=amount.toFixed(2).replace(".",",")+"€";total.textContent=amountText;code.textContent=currentCode;paypalMsg.textContent=currentCode;codeInput.value=currentCode;amountInput.value=amount.toFixed(2)+"€";statusInput.value=labelStatus(status);if(cfg.maintenanceMode){statusBox.innerHTML='<span class="status out">Maintenance</span>';submitBtn.disabled=true;blockedText.textContent="Les commandes sont temporairement désactivées.";return}if(status==="available"){statusBox.innerHTML='<span class="status available">Disponible</span>';submitBtn.disabled=false;blockedText.textContent=""}else{statusBox.innerHTML='<span class="status '+(status==="out"?"out":"expired")+'">'+labelStatus(status)+'</span>';submitBtn.disabled=true;blockedText.textContent="Ce produit ne peut pas être commandé."}}
 copyCodeBtn.onclick=()=>{codeCopied=true;copyError.style.display="none";copyText(getPaypalMessage(),"Message PayPal copié")}; copyAmountBtn.onclick=()=>copyText(total.textContent,"Montant copié"); document.getElementById("discordInput").addEventListener("input",()=>{codeCopied=false;update()});
@@ -70,5 +126,5 @@ document.getElementById("orderForm").onsubmit=(e)=>{
   localStorage.setItem("cheapmeal_last_order",String(Date.now()));
   successBox.style.display="block"
 };
-renderReviews();loadProducts();
+renderReviews();loadProducts();applyUrlPrefill();
 </script></body></html>
