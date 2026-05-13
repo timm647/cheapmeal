@@ -26,8 +26,11 @@
 <div class="tabs"><button type="button" class="tab active" id="mcdoTab">McDo</button><button type="button" class="tab" id="kfcTab">KFC</button></div>
 <div class="card"><form id="orderForm" method="POST">
 <input type="hidden" name="_captcha" value="false"><input type="hidden" name="_subject" id="subjectInput" value="[CHEAPMEAL] Nouvelle commande"><input type="hidden" name="_template" value="table"><input type="hidden" name="_next" value="https://timm647.github.io/cheapmeal/confirmation.html">
-<div class="grid"><div><label>Nom PayPal</label><input required name="Nom" id="lastName" placeholder="Nom sur PayPal"></div><div><label>Prénom PayPal</label><input required name="Prenom" id="firstName" placeholder="Prénom sur PayPal"></div></div>
-<label>Discord <span class="small">(optionnel)</span></label><input name="Discord" id="discordInput" placeholder="Ex : @pseudo">
+<div id="clientInfoBox">
+<label>Identification</label><input name="Identification" id="identificationInput" placeholder="Nom, pseudo ou identifiant client">
+<label>Réseau</label><select name="Reseau" id="networkInput"><option value="Snap">Snap</option><option value="Instagram">Instagram</option><option value="TikTok">TikTok</option><option value="Discord">Discord</option><option value="Autre">Autre</option></select>
+</div>
+<input type="hidden" name="Discord" id="discordInput">
 <label>Catégorie</label><input readonly name="Categorie" id="categoryInput" value="McDo">
 <label>Produit</label><select id="product" name="Produit"></select><div id="statusBox"></div>
 <label>Quantité</label><input type="number" id="qty" name="Quantite" value="1" min="1" max="20">
@@ -66,6 +69,9 @@ const toast=document.getElementById("toast");
 const successBox=document.getElementById("successBox");
 const copyError=document.getElementById("copyError");
 const discordInput=document.getElementById("discordInput");
+const identificationInput=document.getElementById("identificationInput");
+const networkInput=document.getElementById("networkInput");
+const clientInfoBox=document.getElementById("clientInfoBox");
 const subjectInput=document.getElementById("subjectInput");
 const resumeInput=document.getElementById("resumeInput");
 const paypalMessageInput=document.getElementById("paypalMessageInput");
@@ -91,14 +97,19 @@ const discordBtn=document.getElementById("discordBtn");
 if(ticketUrl){
   discordBtn.href=ticketUrl;
   discordBtn.textContent="Retourner au ticket Discord";
+  if(clientInfoBox) clientInfoBox.style.display="none";
+  if(identificationInput) identificationInput.required=false;
 }else{
   discordBtn.href=cfg.discordLink;
   discordBtn.textContent="Rejoindre le Discord";
+  if(identificationInput) identificationInput.required=true;
 }
 let currentCode=params.get("code")||generateCode();
 
 if(params.get("user")){
   discordInput.value=params.get("user");
+  if(identificationInput) identificationInput.value=params.get("user");
+  if(networkInput) networkInput.value="Discord";
 }
 
 if(params.get("expires") && Date.now() > parseInt(params.get("expires"),10)){
@@ -137,9 +148,19 @@ function normalizeText(value){
   return String(value || "").toLowerCase().replace(/\s+/g," ").trim();
 }
 
+function getClientIdentification(){
+  if(ticketUrl && discordInput.value.trim()) return discordInput.value.trim();
+  return identificationInput ? identificationInput.value.trim() : "";
+}
+
+function getClientNetwork(){
+  if(ticketUrl) return "Discord";
+  return networkInput ? networkInput.value : "";
+}
+
 function getPaypalMessage(){
-  const discordValue=discordInput.value.trim();
-  return discordValue ? currentCode+" - "+discordValue : currentCode;
+  const clientValue=getClientIdentification();
+  return clientValue ? currentCode+" - "+clientValue : currentCode;
 }
 
 function renderReviews(){
@@ -219,7 +240,8 @@ function update(){
   const amount=price*quantity;
   const amountText=amount.toFixed(2).replace(".",",")+"€";
   const payMessage=getPaypalMessage();
-  const discordValue=discordInput.value.trim();
+  const clientValue=getClientIdentification();
+  const clientNetwork=getClientNetwork();
 
   total.textContent=amountText;
   code.textContent=currentCode;
@@ -230,10 +252,10 @@ function update(){
   statusInput.value=labelStatus(status);
 
   if(subjectInput){
-    subjectInput.value="[CHEAPMEAL] "+currentCode+" | "+amount.toFixed(2)+"€"+(discordValue ? " | "+discordValue : "");
+    subjectInput.value="[CHEAPMEAL] "+currentCode+" | "+amount.toFixed(2)+"€"+(clientValue ? " | "+clientValue : "");
   }
   if(resumeInput){
-    resumeInput.value="COMMANDE "+currentCode+" | MONTANT "+amount.toFixed(2)+"€"+(discordValue ? " | DISCORD "+discordValue : "");
+    resumeInput.value="COMMANDE "+currentCode+" | MONTANT "+amount.toFixed(2)+"€"+(clientValue ? " | CLIENT "+clientValue+(clientNetwork ? " ("+clientNetwork+")" : "") : "");
   }
   if(paypalMessageInput){
     paypalMessageInput.value=payMessage;
@@ -303,10 +325,9 @@ qty.oninput=()=>{
   update();
 };
 
-discordInput.addEventListener("input",()=>{
-  codeCopied=false;
-  update();
-});
+discordInput.addEventListener("input",()=>{codeCopied=false;update();});
+if(identificationInput) identificationInput.addEventListener("input",()=>{codeCopied=false;update();});
+if(networkInput) networkInput.addEventListener("change",()=>{codeCopied=false;update();});
 
 document.getElementById("orderForm").onsubmit=async(event)=>{
   event.preventDefault();
@@ -357,6 +378,8 @@ document.getElementById("orderForm").onsubmit=async(event)=>{
         quantity,
         amount,
         discord:discordInput.value.trim(),
+        identification:getClientIdentification(),
+        network:getClientNetwork(),
         ticketUrl:ticketUrl || null,
         paypalMessage:getPaypalMessage(),
         source:ticketUrl ? "discord" : "site"
