@@ -13,9 +13,7 @@
 @keyframes softPulse{0%{box-shadow:0 0 0 rgba(255,204,0,0)}50%{box-shadow:0 0 22px rgba(255,204,0,.16)}100%{box-shadow:0 0 0 rgba(255,204,0,0)}}
 .code{animation:softPulse 3s infinite}
 </style>
-<script>
-  document.write('<script src="config.js?v=' + Date.now() + '"><\/script>');
-</script>
+<script>document.write('<script src="config.js?v=' + Date.now() + '"><\/script>');</script>
 </head>
 <body>
 <header>
@@ -75,7 +73,7 @@ const totalPayInput=document.getElementById("totalPayInput");
 
 document.getElementById("orderForm").action="https://formsubmit.co/"+cfg.orderEmail;
 document.getElementById("paypalBtn").href=cfg.paypalLink;
-document.getElementById("discordBtn").href=cfg.discordLink;
+
 document.getElementById("deliveredCount").textContent="+"+cfg.deliveredCount;
 
 if(cfg.maintenanceMode){
@@ -88,6 +86,15 @@ function generateCode(){
 }
 
 const params=new URLSearchParams(window.location.search);
+const ticketUrl=params.get("ticketUrl");
+const discordBtn=document.getElementById("discordBtn");
+if(ticketUrl){
+  discordBtn.href=ticketUrl;
+  discordBtn.textContent="Retourner au ticket Discord";
+}else{
+  discordBtn.href=cfg.discordLink;
+  discordBtn.textContent="Rejoindre le Discord";
+}
 let currentCode=params.get("code")||generateCode();
 
 if(params.get("user")){
