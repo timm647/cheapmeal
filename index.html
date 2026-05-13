@@ -71,7 +71,7 @@ const resumeInput=document.getElementById("resumeInput");
 const paypalMessageInput=document.getElementById("paypalMessageInput");
 const totalPayInput=document.getElementById("totalPayInput");
 
-document.getElementById("orderForm").action="https://formsubmit.co/"+cfg.orderEmail;
+document.getElementById("orderForm").action="#";
 document.getElementById("paypalBtn").href=cfg.paypalLink;
 
 document.getElementById("deliveredCount").textContent="+"+cfg.deliveredCount;
@@ -308,37 +308,76 @@ discordInput.addEventListener("input",()=>{
   update();
 });
 
-document.getElementById("orderForm").onsubmit=(event)=>{
+document.getElementById("orderForm").onsubmit=async(event)=>{
+  event.preventDefault();
   const selected=product.options[product.selectedIndex];
 
   if(linkExpired){
-    event.preventDefault();
     alert("Ce lien de commande a expiré.");
     return;
   }
 
   if(!selected || selected.dataset.status!=="available" || cfg.maintenanceMode){
-    event.preventDefault();
     alert("Ce produit n'est pas disponible.");
     return;
   }
 
   const last=parseInt(localStorage.getItem("cheapmeal_last_order")||"0",10);
   if(Date.now()-last<SPAM_DELAY_MS){
-    event.preventDefault();
     alert("Merci d'attendre un peu avant de renvoyer une commande.");
     return;
   }
 
   if(!codeCopied){
-    event.preventDefault();
     copyError.style.display="block";
     copyError.scrollIntoView({behavior:"smooth",block:"center"});
     return;
   }
 
-  localStorage.setItem("cheapmeal_last_order",String(Date.now()));
-  successBox.style.display="block";
+  if(!cfg.webhookUrl){
+    alert("Webhook non configuré. Contacte le staff.");
+    return;
+  }
+
+  const price=parseFloat(selected.dataset.price);
+  const quantity=Math.max(1,parseInt(qty.value||1));
+  const amount=price*quantity;
+
+  submitBtn.disabled=true;
+  submitBtn.textContent="Envoi en cours...";
+
+  try{
+    const response=await fetch(cfg.webhookUrl,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        code:currentCode,
+        category:currentCategory,
+        product:selected.value,
+        quantity,
+        amount,
+        discord:discordInput.value.trim(),
+        ticketUrl:ticketUrl || null,
+        paypalMessage:getPaypalMessage(),
+        source:ticketUrl ? "discord" : "site"
+      })
+    });
+
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok || result.ok===false){
+      throw new Error(result.error || "Webhook indisponible");
+    }
+
+    localStorage.setItem("cheapmeal_last_order",String(Date.now()));
+    successBox.style.display="block";
+    successBox.scrollIntoView({behavior:"smooth",block:"center"});
+    submitBtn.textContent="Commande envoyée";
+  }catch(error){
+    console.error(error);
+    alert("Impossible d'envoyer la commande automatiquement. Réessaie ou contacte le staff Discord.");
+    submitBtn.disabled=false;
+    submitBtn.textContent="Envoyer la commande";
+  }
 };
 
 renderReviews();
