@@ -1,6 +1,7 @@
 const CHEAPMEAL_CONFIG = {
   "maintenanceMode": false,
   "maintenanceMessage": "Les commandes sont temporairement désactivées. Reviens plus tard ou contacte-nous sur Discord.",
+  webhookUrl: "https://cheapmeal.onrender.com/order",
   "deliveredCount": 250,
   "paypalLink": "https://paypal.me/McdoOne",
   "discordLink": "https://discord.gg/hHFfjjC4rs",
