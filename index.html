@@ -13,7 +13,9 @@
 @keyframes softPulse{0%{box-shadow:0 0 0 rgba(255,204,0,0)}50%{box-shadow:0 0 22px rgba(255,204,0,.16)}100%{box-shadow:0 0 0 rgba(255,204,0,0)}}
 .code{animation:softPulse 3s infinite}
 </style>
-<script src="config.js"></script>
+<script>
+  document.write('<script src="config.js?v=' + Date.now() + '"><\/script>');
+</script>
 </head>
 <body>
 <header>
