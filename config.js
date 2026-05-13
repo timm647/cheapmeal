@@ -67,17 +67,17 @@ const CHEAPMEAL_CONFIG = {
       {
         "name": "KFC 800 pts",
         "price": 4.75,
-        "status": "available"
+        "status": "out"
       },
       {
         "name": "KFC 1000 pts",
         "price": 5,
-        "status": "available"
+        "status": "out"
       },
       {
         "name": "KFC 1300 pts",
         "price": 6.5,
-        "status": "available"
+        "status": "out"
       },
       {
         "name": "KFC 1600 pts",
@@ -92,12 +92,12 @@ const CHEAPMEAL_CONFIG = {
       {
         "name": "KFC 2000 pts",
         "price": 10,
-        "status": "available"
+        "status": "out"
       },
       {
         "name": "KFC 2500 pts",
         "price": 12,
-        "status": "available"
+        "status": "out"
       }
     ]
   },
