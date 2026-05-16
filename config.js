@@ -8,7 +8,7 @@ const CHEAPMEAL_CONFIG = {
   orderEmail: "mcdottt1@gmail.com",
   products: {
     mcdo: [
-      {name:"McDo 75-110 pts", price:3.5, status:"available"},
+      {name:"McDo 75-110 pts", price:1, status:"available"},
       {name:"McDo 125-189 pts", price:5, status:"available"},
       {name:"McDo 200-275 pts", price:9, status:"available"},
       {name:"McDo 300-349 pts", price:10, status:"available"},
