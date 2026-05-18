@@ -1,5 +1,5 @@
 const CHEAPMEAL_CONFIG = {
-  "maintenanceMode": true,
+  "maintenanceMode": false,
   "maintenanceMessage": "Les commandes sont temporairement désactivées. Reviens plus tard ou contacte-nous sur Discord.",
   "webhookUrl": "https://cheapmeal.onrender.com/order",
   "deliveredCount": 250,
@@ -11,42 +11,42 @@ const CHEAPMEAL_CONFIG = {
       {
         "name": "McDo 75-110 pts",
         "price": 1,
-        "status": "available"
+        "status": "out"
       },
       {
         "name": "McDo 125-189 pts",
         "price": 5,
-        "status": "available"
+        "status": "out"
       },
       {
         "name": "McDo 200-275 pts",
         "price": 9,
-        "status": "available"
+        "status": "out"
       },
       {
         "name": "McDo 300-349 pts",
         "price": 10,
-        "status": "available"
+        "status": "out"
       },
       {
         "name": "McDo 350-599 pts",
         "price": 12,
-        "status": "available"
+        "status": "out"
       },
       {
         "name": "McDo 700-1199 pts",
         "price": 30,
-        "status": "available"
+        "status": "out"
       },
       {
         "name": "McDo 1200-1599 pts",
         "price": 42,
-        "status": "available"
+        "status": "out"
       },
       {
         "name": "McDo 1700-2399 pts",
         "price": 70,
-        "status": "available"
+        "status": "out"
       }
     ],
     "kfc": [
